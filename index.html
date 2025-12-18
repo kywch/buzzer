@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buzzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #1a1f3a;
+            --accent-cyan: #00fff9;
+            --accent-magenta: #ff00e5;
+            --accent-yellow: #ffed00;
+            --text-primary: #e0e0e0;
+            --text-dim: #888;
+            --border: #2a2f4a;
+            --glow-cyan: 0 0 20px rgba(0, 255, 249, 0.3);
+            --glow-magenta: 0 0 20px rgba(255, 0, 229, 0.3);
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1535 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 249, 0.03) 2px, rgba(0, 255, 249, 0.03) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            text-shadow: var(--glow-cyan);
+        }
+
+        .subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: minmax(400px, auto) auto;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.8s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.1s; }
+        .panel:nth-child(2) { animation-delay: 0.2s; }
+        .panel:nth-child(3) { animation-delay: 0.3s; }
+        .panel:nth-child(4) { animation-delay: 0.4s; }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header::before {
+            content: '▶';
+            color: var(--accent-magenta);
+            font-size: 0.8em;
+        }
+
+        .next-reminder {
+            font-size: 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-yellow);
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 237, 0, 0.05);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 237, 0, 0.2);
+            margin-bottom: 10px;
+            letter-spacing: 0.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .stat-box {
+            background: rgba(0, 255, 249, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 255, 249, 0.2);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .exercise-list {
+            list-style: none;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .exercise-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .exercise-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .exercise-list::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 4px;
+        }
+
+        .exercise-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-magenta);
+            transition: all 0.3s ease;
+        }
+
+        .exercise-item:hover {
+            background: rgba(255, 0, 229, 0.1);
+            transform: translateX(5px);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .exercise-item input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            flex: 1;
+            outline: none;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--accent-magenta);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 3px 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.2);
+            color: #ff4d4d;
+        }
+
+        .add-exercise {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .add-exercise input {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .add-exercise input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 249, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 249, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta));
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 237, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(255, 237, 0, 0.8);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 237, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(255, 237, 0, 0.8);
+        }
+
+        .history-list {
+            list-style: none;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .history-item {
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .history-date {
+            color: var(--accent-yellow);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .history-exercise {
+            color: var(--text-primary);
+        }
+
+        .weekly-summary {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .week-box {
+            background: rgba(0, 255, 249, 0.05);
+            padding: 8px 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 249, 0.2);
+            text-align: center;
+        }
+
+        .week-label {
+            font-size: 0.55rem;
+            color: var(--text-dim);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .week-count {
+            font-size: 1.1rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 3px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 255, 249, 0.5), 0 0 100px rgba(255, 0, 229, 0.3);
+            animation: modalPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--accent-magenta);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .modal-exercise {
+            font-size: 2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 30px;
+            text-shadow: var(--glow-cyan);
+        }
+
+        .timer-display {
+            font-size: 6rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            color: var(--accent-yellow);
+            margin: 30px 0;
+            text-shadow: 0 0 30px rgba(255, 237, 0, 0.5);
+            letter-spacing: 0.1em;
+        }
+
+        .timer-display.counting {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #00ff88, #00fff9);
+            color: var(--bg-primary);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .btn-delay {
+            background: rgba(255, 0, 229, 0.2);
+            color: var(--accent-magenta);
+            border: 2px solid var(--accent-magenta);
+        }
+
+        .btn-delay:hover {
+            background: rgba(255, 0, 229, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .btn-done {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            color: var(--bg-primary);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .weekly-summary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .timer-display {
+                font-size: 4rem;
+            }
+        }
+
+        footer button:hover {
+            color: var(--accent-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Buzzer ⚡</h1>
+        </header>
+
+        <div class="grid">
+            <!-- Timer & Controls -->
+            <div class="panel">
+                <div class="panel-header">Next Reminder</div>
+                <div class="next-reminder" id="nextReminder">--:--</div>
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Interval</label>
+                    <span style="font-family: 'Orbitron', sans-serif; color: var(--accent-cyan); font-weight: 700; font-size: 0.85rem; min-width: 50px;">15min</span>
+                    <input type="range" id="intervalSlider" min="15" max="90" step="5" value="30" 
+                           oninput="updateInterval()" 
+                           style="flex: 1; height: 6px; background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta)); border-radius: 3px; outline: none; cursor: pointer;">
+                </div>
+                
+                <button class="btn" onclick="exerciseNow()" style="width: 100%; margin-bottom: 12px; padding: 12px; font-size: 0.9rem;">Exercise Now!</button>
+                
+                <ul class="history-list" id="historyList" style="max-height: 260px;"></ul>
+            </div>
+
+            <!-- Exercise List -->
+            <div class="panel" style="display: flex; flex-direction: column;">
+                <div class="panel-header">Exercise List</div>
+                <ul class="exercise-list" id="exerciseList" style="max-height: 260px; flex: 1; overflow-y: auto;"></ul>
+                <div class="add-exercise" style="margin-top: auto;">
+                    <input type="text" id="newExercise" placeholder="Add new exercise..." />
+                    <button class="btn" onclick="addExercise()">Add</button>
+                </div>
+            </div>
+
+            <!-- Stats & Weekly Summary Combined -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">Stats</div>
+                
+                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 12px;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="todayCount">0</div>
+                        <div class="stat-label">Today</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="weekCount">0</div>
+                        <div class="stat-label">This Week</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="streakCount">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalCount">0</div>
+                        <div class="stat-label">Total (7d)</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">12 Week History</div>
+                <div class="weekly-summary" id="weeklySummary" style="grid-template-columns: repeat(12, 1fr);"></div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 15px; padding: 10px; color: var(--text-dim); font-size: 0.75rem;">
+            <button onclick="clearAllData()" style="background: none; border: none; color: var(--accent-magenta); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; transition: color 0.3s ease; cursor: pointer; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0;">
+                🗑️ Clear All Data
+            </button>
+        </footer>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="exerciseModal">
+        <div class="modal-content">
+            <div class="modal-title">⏰ Time for Exercise!</div>
+            <div class="modal-exercise" id="modalExercise">Push-ups</div>
+            <div class="timer-display" id="timerDisplay">60</div>
+            <div class="modal-buttons" id="modalButtons">
+                <button class="modal-btn btn-start" onclick="startTimer()">Start</button>
+                <button class="modal-btn btn-delay" onclick="delayReminder()">Delay 30min</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let exercises = [
+            "10 Push-ups",
+            "1 min Plank",
+            "Hip Bridge",
+            "Sumo Squat Hold",
+            "Hip Flexor Stretch",
+            "Cat-Camel Stretch"
+        ];
+        let history = [];
+        let weeklySummary = [];
+        let nextReminderTime = null;
+        let timerInterval = null;
+        let currentExercise = null;
+        let timeLeft = 60;
+        let reminderIntervalMinutes = 30; // Default 30 minutes
+
+        // Constants
+        const EXERCISE_DURATION = 60; // 60 seconds
+
+        // Initialize
+        function init() {
+            loadData();
+            renderExercises();
+            renderHistory();
+            renderWeeklySummary();
+            updateStats();
+            scheduleNextReminder();
+            updateTimerDisplay();
+            setInterval(updateTimerDisplay, 1000);
+            
+            // Set interval slider value
+            const slider = document.getElementById('intervalSlider');
+            slider.value = reminderIntervalMinutes;
+            slider.previousElementSibling.textContent = `${reminderIntervalMinutes}min`;
+        }
+
+        // Local Storage
+        function loadData() {
+            const stored = localStorage.getItem('exerciseData');
+            if (stored) {
+                const data = JSON.parse(stored);
+                exercises = data.exercises || exercises;
+                history = data.history || [];
+                weeklySummary = data.weeklySummary || [];
+                nextReminderTime = data.nextReminderTime || null;
+                reminderIntervalMinutes = data.reminderIntervalMinutes || 30;
+                
+                // Clean old history (keep only 7 days of detailed data)
+                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                history = history.filter(h => h.timestamp > sevenDaysAgo);
+                
+                // Clean old weekly summaries (keep only 12 weeks)
+                if (weeklySummary.length > 12) {
+                    weeklySummary = weeklySummary.slice(-12);
+                }
+            }
+        }
+
+        function saveData() {
+            const data = {
+                exercises,
+                history,
+                weeklySummary,
+                nextReminderTime,
+                reminderIntervalMinutes
+            };
+            localStorage.setItem('exerciseData', JSON.stringify(data));
+        }
+
+        // Exercise List Management
+        function renderExercises() {
+            const list = document.getElementById('exerciseList');
+            list.innerHTML = exercises.map((ex, i) => `
+                <li class="exercise-item">
+                    <input value="${ex}" onchange="updateExercise(${i}, this.value)" />
+                    <button class="delete-btn" onclick="deleteExercise(${i})">×</button>
+                </li>
+            `).join('');
+        }
+
+        function addExercise() {
+            const input = document.getElementById('newExercise');
+            const exercise = input.value.trim();
+            if (exercise) {
+                exercises.push(exercise);
+                input.value = '';
+                renderExercises();
+                saveData();
+            }
+        }
+
+        function updateExercise(index, value) {
+            exercises[index] = value;
+            saveData();
+        }
+
+        function deleteExercise(index) {
+            exercises.splice(index, 1);
+            renderExercises();
+            saveData();
+        }
+
+        // History Management
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const sorted = [...history].sort((a, b) => b.timestamp - a.timestamp);
+            
+            if (sorted.length === 0) {
+                list.innerHTML = '<li class="history-item"><span style="color: var(--text-dim);">No exercises yet</span></li>';
+                return;
+            }
+            
+            list.innerHTML = sorted.map(h => {
+                const date = new Date(h.timestamp);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return `
+                    <li class="history-item">
+                        <span class="history-date">${dateStr}</span>
+                        <span class="history-exercise">${h.exercise}</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function addToHistory(exercise) {
+            history.push({
+                timestamp: Date.now(),
+                exercise: exercise
+            });
+            updateWeeklySummary();
+            saveData();
+            renderHistory();
+            updateStats();
+        }
+
+        // Weekly Summary
+        function updateWeeklySummary() {
+            const now = new Date();
+            const currentWeekStart = new Date(now);
+            currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+            currentWeekStart.setHours(0, 0, 0, 0);
+            
+            // Count exercises in current week
+            const weekCount = history.filter(h => {
+                const hDate = new Date(h.timestamp);
+                return hDate >= currentWeekStart;
+            }).length;
+            
+            // Check if we already have an entry for this week
+            const weekKey = currentWeekStart.getTime();
+            const existingIndex = weeklySummary.findIndex(w => w.week === weekKey);
+            
+            if (existingIndex >= 0) {
+                weeklySummary[existingIndex].count = weekCount;
+            } else {
+                weeklySummary.push({ week: weekKey, count: weekCount });
+                // Keep only last 12 weeks
+                if (weeklySummary.length > 12) {
+                    weeklySummary = weeklySummary.slice(-12);
+                }
+            }
+        }
+
+        function renderWeeklySummary() {
+            const container = document.getElementById('weeklySummary');
+            
+            // Fill with placeholder weeks if less than 12
+            const displayData = [...weeklySummary];
+            while (displayData.length < 12) {
+                displayData.unshift({ week: null, count: 0 });
+            }
+            
+            const last12 = displayData.slice(-12);
+            
+            // Reverse the order so Current comes first, then -1w, -2w, ..., -11w
+            container.innerHTML = last12.reverse().map((w, i) => {
+                // First item is current week, others show weeks ago
+                const weekLabel = i === 0 ? 'Current' : `-${i}w`;
+                return `
+                    <div class="week-box">
+                        <div class="week-label">${weekLabel}</div>
+                        <div class="week-count">${w.count}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Stats
+        function updateStats() {
+            const now = Date.now();
+            const today = new Date().setHours(0, 0, 0, 0);
+            const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
+            
+            // Today count
+            const todayCount = history.filter(h => h.timestamp >= today).length;
+            document.getElementById('todayCount').textContent = todayCount;
+            
+            // This week count
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            const weekCount = history.filter(h => h.timestamp >= weekStart.getTime()).length;
+            document.getElementById('weekCount').textContent = weekCount;
+            
+            // 7 day total
+            const totalCount = history.filter(h => h.timestamp >= weekAgo).length;
+            document.getElementById('totalCount').textContent = totalCount;
+            
+            // Streak
+            const streak = calculateStreak();
+            document.getElementById('streakCount').textContent = streak;
+        }
+
+        function calculateStreak() {
+            if (history.length === 0) return 0;
+            
+            let streak = 0;
+            let currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i < 365; i++) {
+                const dayStart = currentDate.getTime();
+                const dayEnd = dayStart + (24 * 60 * 60 * 1000);
+                
+                const hasExercise = history.some(h => h.timestamp >= dayStart && h.timestamp < dayEnd);
+                
+                if (hasExercise) {
+                    streak++;
+                    currentDate.setDate(currentDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        // Timer
+        function scheduleNextReminder() {
+            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
+            
+            if (!nextReminderTime || nextReminderTime <= Date.now()) {
+                nextReminderTime = Date.now() + REMINDER_INTERVAL;
+                saveData();
+            }
+            
+            const timeUntilReminder = nextReminderTime - Date.now();
+            setTimeout(showReminder, timeUntilReminder);
+        }
+
+        function exerciseNow() {
+            // Clear any existing scheduled reminder
+            nextReminderTime = null;
+            showReminder();
+        }
+
+        function updateTimerDisplay() {
+            if (nextReminderTime) {
+                const remaining = nextReminderTime - Date.now();
+                if (remaining > 0) {
+                    const minutes = Math.floor(remaining / 60000);
+                    const seconds = Math.floor((remaining % 60000) / 1000);
+                    document.getElementById('nextReminder').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    document.getElementById('nextReminder').textContent = 'NOW!';
+                }
+            }
+        }
+
+        function showReminder() {
+            if (exercises.length === 0) {
+                alert('Please add some exercises first!');
+                scheduleNextReminder();
+                return;
+            }
+            
+            currentExercise = exercises[Math.floor(Math.random() * exercises.length)];
+            document.getElementById('modalExercise').textContent = currentExercise;
+            document.getElementById('exerciseModal').classList.add('active');
+            resetTimer();
+        }
+
+        function delayReminder() {
+            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
+            document.getElementById('exerciseModal').classList.remove('active');
+            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            saveData();
+            scheduleNextReminder();
+        }
+
+        function startTimer() {
+            timeLeft = EXERCISE_DURATION;
+            const timerDisplay = document.getElementById('timerDisplay');
+            const modalButtons = document.getElementById('modalButtons');
+            
+            timerDisplay.classList.add('counting');
+            modalButtons.innerHTML = '<button class="modal-btn btn-done" onclick="completeExercise()">Done!</button>';
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.classList.remove('counting');
+                    completeExercise();
+                }
+            }, 1000);
+        }
+
+        function completeExercise() {
+            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            addToHistory(currentExercise);
+            document.getElementById('exerciseModal').classList.remove('active');
+            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            saveData();
+            scheduleNextReminder();
+            resetTimer();
+        }
+
+        function resetTimer() {
+            timeLeft = EXERCISE_DURATION;
+            const timerDisplay = document.getElementById('timerDisplay');
+            timerDisplay.textContent = timeLeft;
+            timerDisplay.classList.remove('counting');
+            
+            const modalButtons = document.getElementById('modalButtons');
+            modalButtons.innerHTML = `
+                <button class="modal-btn btn-start" onclick="startTimer()">Start</button>
+                <button class="modal-btn btn-delay" onclick="delayReminder()">Delay ${reminderIntervalMinutes}min</button>
+            `;
+        }
+
+        function updateInterval() {
+            const slider = document.getElementById('intervalSlider');
+            reminderIntervalMinutes = parseInt(slider.value);
+            slider.previousElementSibling.textContent = `${reminderIntervalMinutes}min`;
+            
+            // Reset the next reminder time with new interval
+            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
+            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            saveData();
+            scheduleNextReminder();
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This will reset exercises, history, and settings.')) {
+                localStorage.removeItem('exerciseData');
+                location.reload();
+            }
+        }
+
+        // Enter key support
+        document.getElementById('newExercise').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addExercise();
+            }
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
