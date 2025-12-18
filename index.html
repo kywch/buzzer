@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buzzer</title>
+    <title>Buz2er - Exercise Reminder</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -407,6 +407,31 @@
             text-align: center;
             box-shadow: 0 0 50px rgba(0, 255, 249, 0.5), 0 0 100px rgba(255, 0, 229, 0.3);
             animation: modalPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 0, 229, 0.2);
+            color: var(--accent-magenta);
+            transform: rotate(90deg);
         }
 
         @keyframes modalPop {
@@ -493,8 +518,16 @@
         }
 
         .btn-done {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            background: linear-gradient(135deg, #00ff88, #00fff9);
             color: var(--bg-primary);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            padding: 20px 50px;
+            font-size: 1.3rem;
+        }
+
+        .btn-done:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 30px rgba(0, 255, 136, 0.6);
         }
 
         @keyframes fadeInDown {
@@ -539,6 +572,11 @@
             .timer-display {
                 font-size: 4rem;
             }
+
+            .modal-content {
+                max-width: 90vw;
+                padding: 20px;
+            }
         }
 
         footer button:hover {
@@ -550,7 +588,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚡ Buzzer ⚡</h1>
+            <h1>⚡ Buz2er ⚡</h1>
         </header>
 
         <div class="grid">
@@ -620,6 +658,7 @@
     <!-- Modal -->
     <div class="modal" id="exerciseModal">
         <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
             <div class="modal-title">⏰ Time for Exercise!</div>
             <div class="modal-exercise" id="modalExercise">Push-ups</div>
             <div class="timer-display" id="timerDisplay">60</div>
@@ -915,41 +954,49 @@
             resetTimer();
         }
 
-        function delayReminder() {
+        function closeModal() {
             const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
             document.getElementById('exerciseModal').classList.remove('active');
             nextReminderTime = Date.now() + REMINDER_INTERVAL;
             saveData();
             scheduleNextReminder();
+            resetTimer();
+        }
+
+        function delayReminder() {
+            closeModal();
         }
 
         function startTimer() {
             timeLeft = EXERCISE_DURATION;
             const timerDisplay = document.getElementById('timerDisplay');
             const modalButtons = document.getElementById('modalButtons');
-            
+
             timerDisplay.classList.add('counting');
             modalButtons.innerHTML = '<button class="modal-btn btn-done" onclick="completeExercise()">Done!</button>';
-            
+
             timerInterval = setInterval(() => {
                 timeLeft--;
                 timerDisplay.textContent = timeLeft;
-                
+
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
                     timerDisplay.classList.remove('counting');
-                    completeExercise();
+                    // Timer finished, but don't auto-complete - wait for user to click Done
                 }
             }, 1000);
         }
 
         function completeExercise() {
             const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
-            
+
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
-            
+
             addToHistory(currentExercise);
             document.getElementById('exerciseModal').classList.remove('active');
             nextReminderTime = Date.now() + REMINDER_INTERVAL;
@@ -963,7 +1010,7 @@
             const timerDisplay = document.getElementById('timerDisplay');
             timerDisplay.textContent = timeLeft;
             timerDisplay.classList.remove('counting');
-            
+
             const modalButtons = document.getElementById('modalButtons');
             modalButtons.innerHTML = `
                 <button class="modal-btn btn-start" onclick="startTimer()">Start</button>
