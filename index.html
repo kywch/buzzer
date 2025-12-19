@@ -701,6 +701,13 @@
         // Constants
         const EXERCISE_DURATION = 60; // 60 seconds
 
+        // Utility Functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Initialize
         function init() {
             loadData();
@@ -757,7 +764,7 @@
             const list = document.getElementById('exerciseList');
             list.innerHTML = exercises.map((ex, i) => `
                 <li class="exercise-item">
-                    <input value="${ex}" onchange="updateExercise(${i}, this.value)" />
+                    <input value="${escapeHtml(ex)}" onchange="updateExercise(${i}, this.value)" />
                     <button class="delete-btn" onclick="deleteExercise(${i})">×</button>
                 </li>
             `).join('');
@@ -801,7 +808,7 @@
                 return `
                     <li class="history-item">
                         <span class="history-date">${dateStr}</span>
-                        <span class="history-exercise">${h.exercise}</span>
+                        <span class="history-exercise">${escapeHtml(h.exercise)}</span>
                     </li>
                 `;
             }).join('');
@@ -980,8 +987,9 @@
                 scheduleNextReminder();
                 return;
             }
-            
+
             currentExercise = exercises[Math.floor(Math.random() * exercises.length)];
+            // Using textContent is safe as it doesn't interpret HTML
             document.getElementById('modalExercise').textContent = currentExercise;
             document.getElementById('exerciseModal').classList.add('active');
             resetTimer();
