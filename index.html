@@ -466,6 +466,11 @@
             margin-top: 30px;
         }
 
+        .modal-buttons .modal-btn {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
         .modal-btn {
             padding: 15px 30px;
             font-size: 1.1rem;
@@ -477,12 +482,17 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-start {
             background: linear-gradient(135deg, #00ff88, #00fff9);
             color: var(--bg-primary);
             box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            border: 2px solid transparent;
         }
 
         .btn-start:hover {
@@ -1202,10 +1212,24 @@
             timerDisplay.classList.remove('counting');
 
             const modalButtons = document.getElementById('modalButtons');
-            modalButtons.innerHTML = `
-                <button class="modal-btn btn-start" onclick="startTimer()">Start</button>
-                <button class="modal-btn btn-delay" onclick="delayReminder()">Delay ${reminderIntervalMinutes}min</button>
-            `;
+            const pickAnotherButton = exercises.length > 1
+                ? '<button class="modal-btn btn-delay" onclick="pickAnotherExercise()">Change</button>'
+                : '';
+
+            modalButtons.innerHTML = `<button class="modal-btn btn-start" onclick="startTimer()">Start</button><button class="modal-btn btn-delay" onclick="delayReminder()">Delay ${reminderIntervalMinutes}min</button>${pickAnotherButton}`;
+        }
+
+        function pickAnotherExercise() {
+            if (exercises.length <= 1) return;
+
+            // Pick a different exercise than the current one
+            let newExercise;
+            do {
+                newExercise = exercises[Math.floor(Math.random() * exercises.length)];
+            } while (newExercise === currentExercise);
+
+            currentExercise = newExercise;
+            document.getElementById('modalExercise').textContent = currentExercise;
         }
 
         function updateInterval() {
