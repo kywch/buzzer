@@ -134,19 +134,6 @@
             font-size: 0.8em;
         }
 
-        .next-reminder {
-            font-size: 1.5rem;
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-yellow);
-            text-align: center;
-            padding: 12px;
-            background: rgba(255, 237, 0, 0.05);
-            border-radius: 6px;
-            border: 1px solid rgba(255, 237, 0, 0.2);
-            margin-bottom: 10px;
-            letter-spacing: 0.1em;
-        }
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -178,7 +165,7 @@
 
         .exercise-list {
             list-style: none;
-            max-height: 180px;
+            max-height: 283px;
             overflow-y: auto;
             padding-right: 10px;
         }
@@ -240,27 +227,9 @@
             color: #ff4d4d;
         }
 
-        .add-exercise {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .add-exercise input {
-            flex: 1;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text-primary);
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            min-width: 0;
-        }
-
-        .add-exercise input:focus {
+        input[type="text"]:focus {
             outline: none;
-            border-color: var(--accent-cyan);
+            border-color: var(--accent-cyan) !important;
             box-shadow: var(--glow-cyan);
         }
 
@@ -336,7 +305,7 @@
 
         .history-list {
             list-style: none;
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
             padding-right: 10px;
         }
@@ -630,29 +599,33 @@
 
         <div class="grid">
             <!-- Timer & Controls -->
-            <div class="panel">
-                <div class="panel-header">Next Reminder</div>
-                <div class="next-reminder" id="nextReminder">--:--</div>
-                
+            <div class="panel" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="panel-header">Activity Log</div>
+
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <label style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Interval</label>
                     <span style="font-family: 'Orbitron', sans-serif; color: var(--accent-cyan); font-weight: 700; font-size: 0.85rem; min-width: 50px;">15min</span>
-                    <input type="range" id="intervalSlider" min="15" max="90" step="5" value="30" 
-                           oninput="updateInterval()" 
+                    <input type="range" id="intervalSlider" min="15" max="90" step="5" value="30"
+                           oninput="updateInterval()"
                            style="flex: 1; height: 6px; background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta)); border-radius: 3px; outline: none; cursor: pointer;">
                 </div>
-                
+
                 <button class="btn" onclick="exerciseNow()" style="width: 100%; margin-bottom: 12px; padding: 12px; font-size: 0.9rem;">Exercise Now!</button>
-                
-                <ul class="history-list" id="historyList" style="max-height: 260px;"></ul>
+
+                <ul class="history-list" id="historyList" style="flex: 1; overflow-y: auto; min-height: 0;"></ul>
+
+                <div style="margin-top: 12px; display: flex; align-items: center; justify-content: center; height: 40px; gap: 8px; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">
+                    <span>Next in</span>
+                    <span id="nextReminder" style="font-family: 'Orbitron', sans-serif;">--:--</span>
+                </div>
             </div>
 
             <!-- Exercise List -->
-            <div class="panel" style="display: flex; flex-direction: column;">
+            <div class="panel" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="panel-header">Exercise List</div>
-                <ul class="exercise-list" id="exerciseList" style="max-height: 290px; flex: 1; overflow-y: auto;"></ul>
-                <div class="add-exercise" style="margin-top: auto;">
-                    <input type="text" id="newExercise" placeholder="Add new exercise..." />
+                <ul class="exercise-list" id="exerciseList" style="flex: 1; overflow-y: auto; min-height: 0;"></ul>
+                <div style="margin-top: 12px; display: flex; align-items: center; height: 40px; gap: 8px;">
+                    <input type="text" id="newExercise" placeholder="Add new exercise..." style="flex: 1; padding: 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: 'Space Mono', monospace; font-size: 0.8rem; min-width: 0;" />
                     <button class="btn" onclick="addExercise()">Add</button>
                 </div>
             </div>
@@ -719,6 +692,7 @@
         let history = [];
         let weeklySummary = [];
         let nextReminderTime = null;
+        let reminderTimeoutId = null; // Track the scheduled timeout
         let timerInterval = null;
         let currentExercise = null;
         let timeLeft = 60;
@@ -730,6 +704,7 @@
         // Initialize
         function init() {
             loadData();
+            updateWeeklySummary(); // Ensure current week is in summary
             renderExercises();
             renderHistory();
             renderWeeklySummary();
@@ -737,7 +712,7 @@
             scheduleNextReminder();
             updateTimerDisplay();
             setInterval(updateTimerDisplay, 1000);
-            
+
             // Set interval slider value
             const slider = document.getElementById('intervalSlider');
             slider.value = reminderIntervalMinutes;
@@ -755,8 +730,8 @@
                 nextReminderTime = data.nextReminderTime || null;
                 reminderIntervalMinutes = data.reminderIntervalMinutes || 30;
                 
-                // Clean old history (keep only 7 days of detailed data)
-                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                // Clean old history (keep only 14 days of detailed data)
+                const sevenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
                 history = history.filter(h => h.timestamp > sevenDaysAgo);
                 
                 // Clean old weekly summaries (keep only 12 weeks)
@@ -873,19 +848,34 @@
 
         function renderWeeklySummary() {
             const container = document.getElementById('weeklySummary');
-            
-            // Fill with placeholder weeks if less than 12
-            const displayData = [...weeklySummary];
-            while (displayData.length < 12) {
-                displayData.unshift({ week: null, count: 0 });
+
+            // Get current week start
+            const now = new Date();
+            const currentWeekStart = new Date(now);
+            currentWeekStart.setDate(now.getDate() - now.getDay());
+            currentWeekStart.setHours(0, 0, 0, 0);
+            const currentWeekKey = currentWeekStart.getTime();
+
+            // Create array of last 12 weeks in chronological order (oldest to newest)
+            const weeks = [];
+            for (let i = 11; i >= 0; i--) {
+                const weekStart = new Date(currentWeekStart);
+                weekStart.setDate(weekStart.getDate() - (i * 7));
+                weekStart.setHours(0, 0, 0, 0);
+                const weekKey = weekStart.getTime();
+
+                // Find matching data in weeklySummary
+                const weekData = weeklySummary.find(w => w.week === weekKey);
+                weeks.push({
+                    week: weekKey,
+                    count: weekData ? weekData.count : 0,
+                    isCurrent: weekKey === currentWeekKey
+                });
             }
-            
-            const last12 = displayData.slice(-12);
-            
-            // Reverse the order so Current comes first, then -1w, -2w, ..., -11w
-            container.innerHTML = last12.reverse().map((w, i) => {
-                // First item is current week, others show weeks ago
-                const weekLabel = i === 0 ? 'Current' : `-${i}w`;
+
+            // Reverse to show newest first (current week on left)
+            container.innerHTML = weeks.reverse().map((w, i) => {
+                const weekLabel = w.isCurrent ? 'Current' : `-${i}w`;
                 return `
                     <div class="week-box">
                         <div class="week-label">${weekLabel}</div>
@@ -947,15 +937,21 @@
 
         // Timer
         function scheduleNextReminder() {
+            // Clear any existing scheduled reminder
+            if (reminderTimeoutId) {
+                clearTimeout(reminderTimeoutId);
+                reminderTimeoutId = null;
+            }
+
             const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
-            
+
             if (!nextReminderTime || nextReminderTime <= Date.now()) {
                 nextReminderTime = Date.now() + REMINDER_INTERVAL;
                 saveData();
             }
-            
+
             const timeUntilReminder = nextReminderTime - Date.now();
-            setTimeout(showReminder, timeUntilReminder);
+            reminderTimeoutId = setTimeout(showReminder, timeUntilReminder);
         }
 
         function exerciseNow() {
