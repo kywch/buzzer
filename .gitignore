@@ -1,0 +1,16 @@
+# Sandbox directory for interim docs and temporary files
+# (but allow plan files to be committed)
+sandbox/*
+!sandbox/plan-*.md
+!sandbox/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
