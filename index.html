@@ -699,13 +699,39 @@
         let reminderIntervalMinutes = 30; // Default 30 minutes
 
         // Constants
-        const EXERCISE_DURATION = 60; // 60 seconds
+        const CONSTANTS = {
+            EXERCISE_DURATION: 60,           // seconds
+            HISTORY_RETENTION_DAYS: 14,      // days
+            WEEKLY_SUMMARY_WEEKS: 12,        // weeks
+            MAX_STREAK_DAYS: 365,            // days
+            TIMER_UPDATE_INTERVAL: 1000,     // milliseconds
+            MS_PER_MINUTE: 60000,
+            MS_PER_DAY: 24 * 60 * 60 * 1000
+        };
+        const EXERCISE_DURATION = CONSTANTS.EXERCISE_DURATION; // Keep for backward compatibility
 
         // Utility Functions
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function getWeekStart(date = new Date()) {
+            const weekStart = new Date(date);
+            weekStart.setDate(date.getDate() - date.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            return weekStart;
+        }
+
+        function getDayStart(date = new Date()) {
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            return dayStart;
+        }
+
+        function getReminderInterval() {
+            return reminderIntervalMinutes * CONSTANTS.MS_PER_MINUTE;
         }
 
         // Initialize
@@ -718,7 +744,7 @@
             updateStats();
             scheduleNextReminder();
             updateTimerDisplay();
-            setInterval(updateTimerDisplay, 1000);
+            setInterval(updateTimerDisplay, CONSTANTS.TIMER_UPDATE_INTERVAL);
 
             // Set interval slider value
             const slider = document.getElementById('intervalSlider');
@@ -737,13 +763,13 @@
                 nextReminderTime = data.nextReminderTime || null;
                 reminderIntervalMinutes = data.reminderIntervalMinutes || 30;
                 
-                // Clean old history (keep only 14 days of detailed data)
-                const sevenDaysAgo = Date.now() - (14 * 24 * 60 * 60 * 1000);
-                history = history.filter(h => h.timestamp > sevenDaysAgo);
-                
-                // Clean old weekly summaries (keep only 12 weeks)
-                if (weeklySummary.length > 12) {
-                    weeklySummary = weeklySummary.slice(-12);
+                // Clean old history (keep only specified days of detailed data)
+                const retentionTime = Date.now() - (CONSTANTS.HISTORY_RETENTION_DAYS * CONSTANTS.MS_PER_DAY);
+                history = history.filter(h => h.timestamp > retentionTime);
+
+                // Clean old weekly summaries (keep only specified weeks)
+                if (weeklySummary.length > CONSTANTS.WEEKLY_SUMMARY_WEEKS) {
+                    weeklySummary = weeklySummary.slice(-CONSTANTS.WEEKLY_SUMMARY_WEEKS);
                 }
             }
         }
@@ -828,9 +854,7 @@
         // Weekly Summary
         function updateWeeklySummary() {
             const now = new Date();
-            const currentWeekStart = new Date(now);
-            currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
-            currentWeekStart.setHours(0, 0, 0, 0);
+            const currentWeekStart = getWeekStart(now);
             
             // Count exercises in current week
             const weekCount = history.filter(h => {
@@ -846,9 +870,9 @@
                 weeklySummary[existingIndex].count = weekCount;
             } else {
                 weeklySummary.push({ week: weekKey, count: weekCount });
-                // Keep only last 12 weeks
-                if (weeklySummary.length > 12) {
-                    weeklySummary = weeklySummary.slice(-12);
+                // Keep only last specified weeks
+                if (weeklySummary.length > CONSTANTS.WEEKLY_SUMMARY_WEEKS) {
+                    weeklySummary = weeklySummary.slice(-CONSTANTS.WEEKLY_SUMMARY_WEEKS);
                 }
             }
         }
@@ -858,14 +882,12 @@
 
             // Get current week start
             const now = new Date();
-            const currentWeekStart = new Date(now);
-            currentWeekStart.setDate(now.getDate() - now.getDay());
-            currentWeekStart.setHours(0, 0, 0, 0);
+            const currentWeekStart = getWeekStart(now);
             const currentWeekKey = currentWeekStart.getTime();
 
-            // Create array of last 12 weeks in chronological order (oldest to newest)
+            // Create array of last weeks in chronological order (oldest to newest)
             const weeks = [];
-            for (let i = 11; i >= 0; i--) {
+            for (let i = CONSTANTS.WEEKLY_SUMMARY_WEEKS - 1; i >= 0; i--) {
                 const weekStart = new Date(currentWeekStart);
                 weekStart.setDate(weekStart.getDate() - (i * 7));
                 weekStart.setHours(0, 0, 0, 0);
@@ -896,16 +918,14 @@
         function updateStats() {
             const now = Date.now();
             const today = new Date().setHours(0, 0, 0, 0);
-            const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
+            const weekAgo = now - (7 * CONSTANTS.MS_PER_DAY);
             
             // Today count
             const todayCount = history.filter(h => h.timestamp >= today).length;
             document.getElementById('todayCount').textContent = todayCount;
             
             // This week count
-            const weekStart = new Date();
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-            weekStart.setHours(0, 0, 0, 0);
+            const weekStart = getWeekStart();
             const weekCount = history.filter(h => h.timestamp >= weekStart.getTime()).length;
             document.getElementById('weekCount').textContent = weekCount;
             
@@ -920,14 +940,14 @@
 
         function calculateStreak() {
             if (history.length === 0) return 0;
-            
+
             let streak = 0;
             let currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
-            
-            for (let i = 0; i < 365; i++) {
+
+            for (let i = 0; i < CONSTANTS.MAX_STREAK_DAYS; i++) {
                 const dayStart = currentDate.getTime();
-                const dayEnd = dayStart + (24 * 60 * 60 * 1000);
+                const dayEnd = dayStart + CONSTANTS.MS_PER_DAY;
                 
                 const hasExercise = history.some(h => h.timestamp >= dayStart && h.timestamp < dayEnd);
                 
@@ -950,10 +970,8 @@
                 reminderTimeoutId = null;
             }
 
-            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
-
             if (!nextReminderTime || nextReminderTime <= Date.now()) {
-                nextReminderTime = Date.now() + REMINDER_INTERVAL;
+                nextReminderTime = Date.now() + getReminderInterval();
                 saveData();
             }
 
@@ -971,8 +989,8 @@
             if (nextReminderTime) {
                 const remaining = nextReminderTime - Date.now();
                 if (remaining > 0) {
-                    const minutes = Math.floor(remaining / 60000);
-                    const seconds = Math.floor((remaining % 60000) / 1000);
+                    const minutes = Math.floor(remaining / CONSTANTS.MS_PER_MINUTE);
+                    const seconds = Math.floor((remaining % CONSTANTS.MS_PER_MINUTE) / 1000);
                     document.getElementById('nextReminder').textContent = 
                         `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 } else {
@@ -996,12 +1014,11 @@
         }
 
         function closeModal() {
-            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
             document.getElementById('exerciseModal').classList.remove('active');
-            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            nextReminderTime = Date.now() + getReminderInterval();
             saveData();
             scheduleNextReminder();
             resetTimer();
@@ -1028,19 +1045,17 @@
                     timerDisplay.classList.remove('counting');
                     // Timer finished, but don't auto-complete - wait for user to click Done
                 }
-            }, 1000);
+            }, CONSTANTS.TIMER_UPDATE_INTERVAL);
         }
 
         function completeExercise() {
-            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
-
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
 
             addToHistory(currentExercise);
             document.getElementById('exerciseModal').classList.remove('active');
-            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            nextReminderTime = Date.now() + getReminderInterval();
             saveData();
             scheduleNextReminder();
             resetTimer();
@@ -1063,10 +1078,9 @@
             const slider = document.getElementById('intervalSlider');
             reminderIntervalMinutes = parseInt(slider.value);
             slider.previousElementSibling.textContent = `${reminderIntervalMinutes}min`;
-            
+
             // Reset the next reminder time with new interval
-            const REMINDER_INTERVAL = reminderIntervalMinutes * 60 * 1000;
-            nextReminderTime = Date.now() + REMINDER_INTERVAL;
+            nextReminderTime = Date.now() + getReminderInterval();
             saveData();
             scheduleNextReminder();
         }
