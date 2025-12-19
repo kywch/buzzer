@@ -952,11 +952,21 @@
         }
 
         function updateExercise(index, value) {
-            exercises[index] = value;
+            const trimmedValue = value.trim();
+            if (trimmedValue === '') {
+                alert('Exercise name cannot be empty!');
+                renderExercises(); // Re-render to restore the original value
+                return;
+            }
+            exercises[index] = trimmedValue;
             saveData();
         }
 
         function deleteExercise(index) {
+            if (exercises.length <= 1) {
+                alert('Cannot delete the last exercise! You must have at least one exercise.');
+                return;
+            }
             exercises.splice(index, 1);
             renderExercises();
             saveData();
