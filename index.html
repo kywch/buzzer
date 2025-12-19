@@ -170,16 +170,19 @@
             padding-right: 10px;
         }
 
-        .exercise-list::-webkit-scrollbar {
+        .exercise-list::-webkit-scrollbar,
+        .history-list::-webkit-scrollbar {
             width: 8px;
         }
 
-        .exercise-list::-webkit-scrollbar-track {
+        .exercise-list::-webkit-scrollbar-track,
+        .history-list::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
         }
 
-        .exercise-list::-webkit-scrollbar-thumb {
+        .exercise-list::-webkit-scrollbar-thumb,
+        .history-list::-webkit-scrollbar-thumb {
             background: var(--accent-cyan);
             border-radius: 4px;
         }
@@ -589,6 +592,138 @@
             color: var(--accent-cyan);
             text-shadow: var(--glow-cyan);
         }
+
+        /* Utility Classes */
+        .panel-flex {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .flex-fill {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .interval-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .interval-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .interval-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-cyan);
+            font-weight: 700;
+            font-size: 0.85rem;
+            min-width: 50px;
+        }
+
+        .interval-slider {
+            flex: 1;
+            height: 6px;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta));
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .input-group {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            height: 40px;
+            gap: 8px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            min-width: 0;
+        }
+
+        .btn-exercise-now {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+
+        .next-reminder-display {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            gap: 8px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .next-reminder-timer {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .panel-full-width {
+            grid-column: 1 / -1;
+        }
+
+        .stats-grid-4col {
+            grid-template-columns: repeat(4, 1fr);
+            margin-bottom: 12px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .weekly-summary-12col {
+            grid-template-columns: repeat(12, 1fr);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        .footer-btn {
+            background: none;
+            border: none;
+            color: var(--accent-magenta);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
@@ -599,42 +734,41 @@
 
         <div class="grid">
             <!-- Timer & Controls -->
-            <div class="panel" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="panel panel-flex">
                 <div class="panel-header">Activity Log</div>
 
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <label style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Interval</label>
-                    <span style="font-family: 'Orbitron', sans-serif; color: var(--accent-cyan); font-weight: 700; font-size: 0.85rem; min-width: 50px;">15min</span>
-                    <input type="range" id="intervalSlider" min="15" max="90" step="5" value="30"
-                           oninput="updateInterval()"
-                           style="flex: 1; height: 6px; background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta)); border-radius: 3px; outline: none; cursor: pointer;">
+                <div class="interval-control">
+                    <label class="interval-label">Interval</label>
+                    <span class="interval-value">15min</span>
+                    <input type="range" class="interval-slider" id="intervalSlider" min="15" max="90" step="5" value="30"
+                           oninput="updateInterval()">
                 </div>
 
-                <button class="btn" onclick="exerciseNow()" style="width: 100%; margin-bottom: 12px; padding: 12px; font-size: 0.9rem;">Exercise Now!</button>
+                <button class="btn btn-exercise-now" onclick="exerciseNow()">Exercise Now!</button>
 
-                <ul class="history-list" id="historyList" style="flex: 1; overflow-y: auto; min-height: 0;"></ul>
+                <ul class="history-list flex-fill" id="historyList"></ul>
 
-                <div style="margin-top: 12px; display: flex; align-items: center; justify-content: center; height: 40px; gap: 8px; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">
+                <div class="next-reminder-display">
                     <span>Next in</span>
-                    <span id="nextReminder" style="font-family: 'Orbitron', sans-serif;">--:--</span>
+                    <span class="next-reminder-timer" id="nextReminder">--:--</span>
                 </div>
             </div>
 
             <!-- Exercise List -->
-            <div class="panel" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="panel panel-flex">
                 <div class="panel-header">Exercise List</div>
-                <ul class="exercise-list" id="exerciseList" style="flex: 1; overflow-y: auto; min-height: 0;"></ul>
-                <div style="margin-top: 12px; display: flex; align-items: center; height: 40px; gap: 8px;">
-                    <input type="text" id="newExercise" placeholder="Add new exercise..." style="flex: 1; padding: 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: 'Space Mono', monospace; font-size: 0.8rem; min-width: 0;" />
+                <ul class="exercise-list flex-fill" id="exerciseList"></ul>
+                <div class="input-group">
+                    <input type="text" id="newExercise" placeholder="Add new exercise..." />
                     <button class="btn" onclick="addExercise()">Add</button>
                 </div>
             </div>
 
             <!-- Stats & Weekly Summary Combined -->
-            <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel panel-full-width">
                 <div class="panel-header">Stats</div>
-                
-                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 12px;">
+
+                <div class="stats-grid stats-grid-4col">
                     <div class="stat-box">
                         <div class="stat-value" id="todayCount">0</div>
                         <div class="stat-label">Today</div>
@@ -652,14 +786,14 @@
                         <div class="stat-label">Total (7d)</div>
                     </div>
                 </div>
-                
-                <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">12 Week History</div>
-                <div class="weekly-summary" id="weeklySummary" style="grid-template-columns: repeat(12, 1fr);"></div>
+
+                <div class="section-label">12 Week History</div>
+                <div class="weekly-summary weekly-summary-12col" id="weeklySummary"></div>
             </div>
         </div>
 
-        <footer style="text-align: center; margin-top: 15px; padding: 10px; color: var(--text-dim); font-size: 0.75rem;">
-            <button onclick="clearAllData()" style="background: none; border: none; color: var(--accent-magenta); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; transition: color 0.3s ease; cursor: pointer; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0;">
+        <footer>
+            <button class="footer-btn" onclick="clearAllData()">
                 🗑️ Clear All Data
             </button>
         </footer>
