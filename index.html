@@ -882,10 +882,11 @@
         function init() {
             loadData();
             updateWeeklySummary(); // Ensure current week is in summary
+            saveData(); // Persist the updated weekly summary
             renderExercises();
             renderHistory();
             renderWeeklySummary();
-            updateStats();
+            renderStats();
             scheduleNextReminder();
             updateTimerDisplay();
             setInterval(updateTimerDisplay, CONSTANTS.TIMER_UPDATE_INTERVAL);
@@ -1002,7 +1003,8 @@
             updateWeeklySummary();
             saveData();
             renderHistory();
-            updateStats();
+            renderWeeklySummary(); // Re-render the 12-week history grid
+            renderStats();
         }
 
         // Weekly Summary
@@ -1069,7 +1071,7 @@
         }
 
         // Stats
-        function updateStats() {
+        function renderStats() {
             const now = Date.now();
             const today = new Date().setHours(0, 0, 0, 0);
             const weekAgo = now - (7 * CONSTANTS.MS_PER_DAY);
