@@ -1100,13 +1100,15 @@
             let streak = 0;
             let currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
+            currentDate.setDate(currentDate.getDate() - 1); // Start from yesterday
 
+            // Calculate streak from yesterday backwards
             for (let i = 0; i < CONSTANTS.MAX_STREAK_DAYS; i++) {
                 const dayStart = currentDate.getTime();
                 const dayEnd = dayStart + CONSTANTS.MS_PER_DAY;
-                
+
                 const hasExercise = history.some(h => h.timestamp >= dayStart && h.timestamp < dayEnd);
-                
+
                 if (hasExercise) {
                     streak++;
                     currentDate.setDate(currentDate.getDate() - 1);
@@ -1114,7 +1116,17 @@
                     break;
                 }
             }
-            
+
+            // Check if today has exercises and increment streak if so
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const todayEnd = todayStart.getTime() + CONSTANTS.MS_PER_DAY;
+            const todayHasExercise = history.some(h => h.timestamp >= todayStart.getTime() && h.timestamp < todayEnd);
+
+            if (todayHasExercise) {
+                streak++;
+            }
+
             return streak;
         }
 
