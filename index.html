@@ -841,6 +841,7 @@
         let currentExercise = null;
         let timeLeft = 60;
         let reminderIntervalMinutes = 30; // Default 30 minutes
+        let recentExercises = []; // Track last 2 exercises to avoid repeats
 
         // Constants
         const CONSTANTS = {
@@ -907,7 +908,8 @@
                 weeklySummary = data.weeklySummary || [];
                 nextReminderTime = data.nextReminderTime || null;
                 reminderIntervalMinutes = data.reminderIntervalMinutes || 30;
-                
+                recentExercises = data.recentExercises || [];
+
                 // Clean old history (keep only specified days of detailed data)
                 const retentionTime = Date.now() - (CONSTANTS.HISTORY_RETENTION_DAYS * CONSTANTS.MS_PER_DAY);
                 history = history.filter(h => h.timestamp > retentionTime);
@@ -925,7 +927,8 @@
                 history,
                 weeklySummary,
                 nextReminderTime,
-                reminderIntervalMinutes
+                reminderIntervalMinutes,
+                recentExercises
             };
             localStorage.setItem('exerciseData', JSON.stringify(data));
         }
@@ -1174,7 +1177,17 @@
                 return;
             }
 
-            currentExercise = exercises[Math.floor(Math.random() * exercises.length)];
+            // Filter out the last 2 exercises to avoid repetition
+            let availableExercises = exercises.filter(ex => !recentExercises.includes(ex));
+
+            // If we've filtered out too many (happens when there are only 1-2 exercises),
+            // just use all exercises
+            if (availableExercises.length === 0) {
+                availableExercises = exercises;
+            }
+
+            currentExercise = availableExercises[Math.floor(Math.random() * availableExercises.length)];
+
             // Using textContent is safe as it doesn't interpret HTML
             document.getElementById('modalExercise').textContent = currentExercise;
             document.getElementById('exerciseModal').classList.add('active');
@@ -1222,6 +1235,14 @@
             }
 
             addToHistory(currentExercise);
+
+            // Track this exercise in recent history to avoid repeating it soon
+            recentExercises.push(currentExercise);
+            // Keep only the last 2 exercises
+            if (recentExercises.length > 2) {
+                recentExercises.shift();
+            }
+
             document.getElementById('exerciseModal').classList.remove('active');
             nextReminderTime = Date.now() + getReminderInterval();
             saveData();
@@ -1246,12 +1267,17 @@
         function pickAnotherExercise() {
             if (exercises.length <= 1) return;
 
-            // Pick a different exercise than the current one
-            let newExercise;
-            do {
-                newExercise = exercises[Math.floor(Math.random() * exercises.length)];
-            } while (newExercise === currentExercise);
+            // Filter out the current exercise and recent exercises
+            let availableExercises = exercises.filter(ex =>
+                ex !== currentExercise && !recentExercises.includes(ex)
+            );
 
+            // If we've filtered out too many, just exclude the current one
+            if (availableExercises.length === 0) {
+                availableExercises = exercises.filter(ex => ex !== currentExercise);
+            }
+
+            const newExercise = availableExercises[Math.floor(Math.random() * availableExercises.length)];
             currentExercise = newExercise;
             document.getElementById('modalExercise').textContent = currentExercise;
         }
